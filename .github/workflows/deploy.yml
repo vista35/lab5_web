@@ -1,0 +1,42 @@
+name: Build & Smoke Test & Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.8'
+
+    - name: Install dependencies
+      run: |
+        pip install flask
+        pip install gunicorn
+        pip install requests
+        pip install flask-bootstrap
+        pip install flask-wtf
+        pip install pillow
+        pip install tensorflow==2.0.0-alpha0
+        pip install keras
+
+    - name: Smoke test: run and stop gunicorn
+      run: |
+        chmod +x ./flaskapp/st.sh
+        cd flaskapp
+        ./st.sh
+
+    - name: Trigger deploy on Render
+      run: |
+        curl -X POST "$RENDER_DEPLOY_HOOK"
+      env:
+        RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
